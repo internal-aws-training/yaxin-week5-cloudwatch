@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: aws-cloudwatch-dojo
+Parameters:
+  LambdaFunctionName:
+    Description: Lambda Function Name
+    Default: lambda-with-metrics
+    Type: String
+  LambdaRoleName:
+    Description: Lambda Role Name
+    Default: lambda-with-metrics-role
+    Type: String
+  LambdaPolicyName:
+    Description: Policy Name
+    Default: lambda-with-metrics-policy
+    Type: String
+  TriggerRuleName:
+    Description: Trigger Rule Name
+    Default: trigger-event-rules
+    Type: String
+  LambdaBucketName:
+    Description: Lambda Bucket Name
+    Default: lambda-metrics-bucket-yaxin
+    Type: String
+  LambdaBucketKey:
+    Description: Lambda Bucket Key
+    Default: cloudwatch-dojo.zip
+    Type: String
+
+Resources:
+  MetricsLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/metrics-lambda-function
+      RetentionInDays: 7
+
+  MetricsLambda:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - MetricsLambdaLogGroup
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Role: !GetAtt MetricsLambdaRole.Arn
+      Handler: src/index.handler
+      Runtime: nodejs12.x
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: !Ref LambdaBucketKey
+      MemorySize: 128
+      Timeout: 3
+
+  MetricsLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref LambdaRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Ref LambdaPolicyName
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+
+  LambdaScheduleTriggerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: cron(0/1 * * * ? *)
+      Targets:
+        - Id: !Ref TriggerRuleName
+          Arn: !GetAtt MetricsLambda.Arn  #todo
+
+  InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt MetricsLambda.Arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LambdaScheduleTriggerRule.Arn

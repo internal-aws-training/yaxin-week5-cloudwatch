@@ -1,0 +1,14 @@
+{
+    "name": "cloudwatch-dojo",
+    "version": "0.0.1",
+    "description": "AWS Cloudwatch practice",
+    "main": "src/index.js",
+    "scripts": {
+        "pack": "npm-pack-zip"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "npm-pack-zip": "^1.2.7"
+    }
+}
