@@ -62,7 +62,10 @@ Resources:
               - Effect: Allow
                 Action:
                   - logs:*
-                Resource: arn:aws:logs:*:*:*
+                  - cloudwatch:PutMetricData
+                Resource:
+                  - arn:aws:logs:*:*:*
+                  - "*"
 
   LambdaScheduleTriggerRule:
     Type: AWS::Events::Rule
@@ -79,3 +82,30 @@ Resources:
       FunctionName: !GetAtt MetricsLambda.Arn
       Principal: events.amazonaws.com
       SourceArn: !GetAtt LambdaScheduleTriggerRule.Arn
+
+  MySNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: AlarmSNSTopic
+      Subscription:
+        - Endpoint: yxwang@thoughtworks.com
+          Protocol: email
+      TopicName: "SampleTopic"
+
+  MyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref MySNSTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      MetricName: MyMetric
+      Namespace: MyNamespace
+      OKActions:
+        - !Ref MySNSTopic
+      Period: 30
+      EvaluationPeriods: 1
+      Threshold: 1
+      Statistic: Average
+      Dimensions:
+        - Name: DimensionName
+          Value: DimensionValue
