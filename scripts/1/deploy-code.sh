@@ -7,4 +7,4 @@ aws cloudformation deploy \
   --region ap-southeast-1 \
   --template-file aws/cloudformation/bucket.yml
 
-aws s3 cp ./cloudwatch-dojo.zip s3://lambda-metrics-bucket-yaxin/
+aws s3 cp ./cloudwatch-dojo1.zip s3://lambda-metrics-bucket-yaxin/

@@ -2,7 +2,7 @@
     "name": "cloudwatch-dojo",
     "version": "0.0.1",
     "description": "AWS Cloudwatch practice",
-    "main": "src/index.js",
+    "main": "src/index2.js",
     "scripts": {
         "pack": "npm-pack-zip"
     },
