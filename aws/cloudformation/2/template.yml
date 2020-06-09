@@ -3,19 +3,19 @@ Description: aws-cloudwatch-dojo
 Parameters:
   LambdaFunctionName:
     Description: Lambda Function Name
-    Default: lambda-with-metrics
+    Default: lambda-with-metrics2
     Type: String
   LambdaRoleName:
     Description: Lambda Role Name
-    Default: lambda-with-metrics-role
+    Default: lambda-with-metrics-role2
     Type: String
   LambdaPolicyName:
     Description: Policy Name
-    Default: lambda-with-metrics-policy
+    Default: lambda-with-metrics-policy2
     Type: String
   TriggerRuleName:
     Description: Trigger Rule Name
-    Default: trigger-event-rules
+    Default: trigger-event-rules2
     Type: String
   LambdaBucketName:
     Description: Lambda Bucket Name
@@ -23,17 +23,22 @@ Parameters:
     Type: String
   LambdaBucketKey:
     Description: Lambda Bucket Key
-    Default: cloudwatch-dojo.zip
+    Default: cloudwatch-dojo2.zip
     Type: String
 
 Resources:
+  MetricsLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${LambdaFunctionName}
+      RetentionInDays: 7
 
   MetricsLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Ref LambdaFunctionName
       Role: !GetAtt MetricsLambdaRole.Arn
-      Handler: src/index1.handler
+      Handler: src/index2.handler
       Runtime: nodejs12.x
       Code:
         S3Bucket: !Ref LambdaBucketName
@@ -43,6 +48,8 @@ Resources:
 
   MetricsLambdaRole:
     Type: AWS::IAM::Role
+    DependsOn:
+      - MetricsLambdaLogGroup
     Properties:
       RoleName: !Ref LambdaRoleName
       AssumeRolePolicyDocument:
@@ -62,10 +69,8 @@ Resources:
               - Effect: Allow
                 Action:
                   - logs:*
-                  - cloudwatch:PutMetricData
                 Resource:
                   - arn:aws:logs:*:*:*
-                  - "*"
 
   LambdaScheduleTriggerRule:
     Type: AWS::Events::Rule
@@ -86,11 +91,21 @@ Resources:
   MySNSTopic:
     Type: AWS::SNS::Topic
     Properties:
-      DisplayName: AlarmSNSTopic
+      DisplayName: AlarmSNSTopic2
       Subscription:
         - Endpoint: yxwang@thoughtworks.com
           Protocol: email
-      TopicName: "SampleTopic"
+      TopicName: "SampleTopic2"
+
+  MyMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: "hello"
+      LogGroupName: !Ref MetricsLambdaLogGroup
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: "MyNamespace2"
+          MetricName: "MyMetric2"
 
   MyAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -98,14 +113,11 @@ Resources:
       AlarmActions:
         - !Ref MySNSTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
-      MetricName: MyMetric
-      Namespace: MyNamespace
+      MetricName: MyMetric2
+      Namespace: MyNamespace2
       OKActions:
         - !Ref MySNSTopic
       Period: 30
       EvaluationPeriods: 1
       Threshold: 1
       Statistic: Average
-      Dimensions:
-        - Name: DimensionName
-          Value: DimensionValue
